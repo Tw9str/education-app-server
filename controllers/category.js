@@ -1,0 +1,148 @@
+const Category = require("../models/category");
+const Exam = require("../models/exam");
+const Question = require("../models/question");
+const { promisify } = require("util");
+const { join } = require("path");
+const fs = require("fs");
+
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find().lean();
+
+    const categoriesWithExamCounts = await Promise.all(
+      categories.map(async (category) => {
+        const examCount = await Exam.countDocuments({ category: category._id });
+        return {
+          ...category,
+          examCount: examCount,
+        };
+      })
+    );
+
+    res.json(categoriesWithExamCounts);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+};
+
+const getCategory = async (req, res) => {
+  const { slug } = req.params;
+  try {
+    const category = await Category.findOne({ slug });
+    if (!category) {
+      return res.status(404).send({ message: "Category not found" });
+    }
+    res.json(category);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const addCategory = async (req, res) => {
+  const { title } = req.body;
+
+  if (/[^a-zA-Z0-9\s]/.test(title)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Title contains special characters. Please provide a valid title.",
+    });
+  }
+
+  const formattedTitle = title.toLowerCase().replace(/\s+/g, "-");
+
+  const category = new Category({
+    title: formattedTitle,
+  });
+  try {
+    await category.save();
+    res.status(201).json({ success: true, message: "Category saved" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Name already used!", error: error.message });
+  }
+};
+
+const updateSold = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Category = await Category.findById(id);
+    if (!Category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    Category.sold = !Category.sold;
+    await Category.save();
+    res.status(201).json({ success: true, message: "Sold status updated" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving update" });
+  }
+};
+
+const deleteFile = promisify(fs.unlink);
+
+const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the category by ID
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // Delete the category
+    await category.deleteOne();
+
+    // Find and delete all exams related to the category
+    const exams = await Exam.find({ category: id });
+    for (const exam of exams) {
+      // Delete the exam
+      await exam.deleteOne();
+      // Find and delete all related questions
+      await Question.deleteMany({ _id: { $in: exam.questions } });
+    }
+
+    res.json({
+      message:
+        "Category, corresponding exams, and related questions deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// const deleteFile = promisify(fs.unlink);
+
+// const deleteCategory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const Category = await Category.findById(id);
+//     if (!Category) {
+//       return res.status(404).json({ message: "Category not found" });
+//     }
+//     for (const image of Category.imagesPath) {
+//       const imagePath = join(
+//         __dirname,
+//         "../../client/public/assets/imgs",
+//         image
+//       );
+//       if (fs.existsSync(imagePath)) {
+//         await deleteFile(imagePath);
+//       }
+//     }
+//     await Category.deleteOne();
+//     res.json({ message: "Category deleted successfully" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+module.exports = {
+  getCategories,
+  getCategory,
+  addCategory,
+  updateSold,
+  deleteCategory,
+};
