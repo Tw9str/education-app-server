@@ -65,7 +65,7 @@ const addExam = async (req, res) => {
           const newQuestion = new Question({
             image: req.files[index]?.filename || "",
             answers: question.answers,
-            correctAnswer: question.correctAnswer,
+            correctAnswers: question.correctAnswers,
             explanation: question.explanation,
           });
           return await newQuestion.save();

@@ -35,7 +35,7 @@ app.use(express.static("public"));
 // Storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "../client/public/images");
+    cb(null, "public/questions");
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname.replace(/\s/g, "-")}`);
@@ -44,7 +44,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-app.post("/api/create-exam", upload.array("questions"), addExam);
+app.post("/api/create-exam", upload.any(), addExam);
 app.get("/api/exams/exam/:slug", getExam);
 app.get("/api/exams", getExams);
 app.post("/api/auth/login", login);
