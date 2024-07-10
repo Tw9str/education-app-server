@@ -66,6 +66,7 @@ const addExam = async (req, res) => {
             image: req.files[index]?.filename || "",
             answers: question.answers,
             correctAnswers: question.correctAnswers,
+            points: parseFloat(question.points),
             explanation: question.explanation,
           });
           return await newQuestion.save();
