@@ -1,19 +1,19 @@
 const jwt = require("jsonwebtoken");
 
-const verifyToken = async (req, res, next) => {
+const verifyRole = (roles) => async (req, res, next) => {
   try {
     let token = req.header("Authorization");
-
-    if (!token) {
+    if (!token || !token.startsWith("Bearer ")) {
       return res.status(403).json({ message: "Access Denied" });
     }
 
-    if (token.startsWith("Bearer ")) {
-      token = token.split(" ")[1];
-    }
-
+    token = token.split(" ")[1];
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified;
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Access Denied" });
+    }
 
     next();
   } catch (err) {
@@ -21,4 +21,4 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-module.exports = verifyToken;
+module.exports = verifyRole;

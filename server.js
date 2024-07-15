@@ -4,7 +4,7 @@ const multer = require("multer");
 const cors = require("cors");
 const helmet = require("helmet");
 const { addExam, getExam, getExams } = require("./controllers/exam");
-const { login, register } = require("./controllers/user");
+const { login, register, createSeedUser } = require("./controllers/user");
 const {
   addListing,
   getAds,
@@ -22,6 +22,7 @@ const {
   addCategory,
   deleteCategory,
 } = require("./controllers/category");
+const verifyRole = require("./middleware/auth");
 require("dotenv").config();
 
 // Middleware
@@ -44,16 +45,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-app.post("/api/create-exam", upload.any(), addExam);
+app.post(
+  "/api/create-exam",
+  verifyRole(["admin", "teacher"]),
+  upload.any(),
+  addExam
+);
 app.get("/api/exams/exam/:slug", getExam);
 app.get("/api/exams", getExams);
 app.post("/api/auth/login", login);
 app.post("/api/auth/register", register);
+app.get("/api/auth/createSeedUser", createSeedUser);
 // app.post("/api/listing/add", verifyToken, upload.array("imgs"), addListing);
 app.get("/api/categories", getCategories);
 app.post("/api/category/add", addCategory);
 app.get("/api/categories/:title", getExamCategory);
-app.delete("/api/categories/delete/:id", deleteCategory);
+app.delete("/api/categories/delete/:id", verifyRole(["admin"]), deleteCategory);
 // app.delete("/api/listing/delete/:id", verifyToken, verifyAdOwner, deleteAd);
 app.get("/api/:username/ads", getUserAds);
 app.get("/api/ads", getAds);

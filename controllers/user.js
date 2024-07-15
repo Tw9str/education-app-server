@@ -58,16 +58,14 @@ const createSeedUser = async (req, res) => {
     }).lean();
     if (seedUser) {
       delete seedUser.password;
-      return res
-        .status(400)
-        .json({ message: "Seed user already existed.", seedUser });
+      return res.status(400).json({ message: "Seed user already existed." });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(process.env.SEED_PASSWORD, salt);
 
     const newUser = new User({
-      name: "admin",
+      username: "admin",
       email: process.env.SEED_EMAIL,
       password: hashedPassword,
       role: "admin",
