@@ -5,14 +5,103 @@ const User = require("../models/user");
 // Register User
 const register = async (req, res) => {
   const { username, email, password } = req.body;
-  const salt = await bcrypt.genSalt();
-  const HashedPassword = await bcrypt.hash(password, salt);
-  const user = new User({ username, email, password: HashedPassword });
+
+  // Define validation rules
+  const validationRules = [
+    {
+      field: "username",
+      checks: [
+        { condition: !username, message: "Username is required." },
+        {
+          condition: username && !/^[\w.]+$/.test(username),
+          message:
+            "Username can only contain alphanumeric characters, dots, and underscores.",
+        },
+        {
+          condition: username && username.length > 30,
+          message: "Username cannot exceed 30 characters.",
+        },
+      ],
+    },
+    {
+      field: "email",
+      checks: [
+        { condition: !email, message: "Email is required." },
+        {
+          condition: email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+          message: "Invalid email format.",
+        },
+        {
+          condition: email && email.length > 254,
+          message: "Email cannot exceed 254 characters.",
+        },
+      ],
+    },
+    {
+      field: "password",
+      checks: [
+        {
+          condition: password.length < 8,
+          message: "Password must be at least 8 characters long.",
+        },
+        {
+          condition: password.length > 128,
+          message: "Password cannot exceed 128 characters.",
+        },
+        {
+          condition: !/[A-Z]/.test(password),
+          message: "Password must contain at least one uppercase letter.",
+        },
+        {
+          condition: !/[a-z]/.test(password),
+          message: "Password must contain at least one lowercase letter.",
+        },
+        {
+          condition: !/[0-9]/.test(password),
+          message: "Password must contain at least one digit.",
+        },
+        {
+          condition: !/[!@#$%^&*]/.test(password),
+          message: "Password must contain at least one special character.",
+        },
+      ],
+    },
+  ];
+
+  // Aggregate all validation errors
+  const errors = validationRules.flatMap(({ checks }) =>
+    checks.filter(({ condition }) => condition).map(({ message }) => message)
+  );
+
+  // Return errors if any
+  if (errors.length) return res.status(400).json({ message: errors });
+
   try {
+    // Hash the password and save the new user
+    const hashedPassword = await bcrypt.hash(password, await bcrypt.genSalt());
+    const user = new User({ username, email, password: hashedPassword });
     await user.save();
-    res.status(201).json({ success: true, message: "Register successful" });
+    res.status(201).json({ success: true, message: "Registration successful" });
   } catch (err) {
-    res.status(500).json({ error: err.message, message: "User Existed" });
+    const errorMessages = [];
+
+    if (err.code === 11000) {
+      errorMessages.push(
+        err.keyValue?.username
+          ? "Username already exists!"
+          : "Email already registered!"
+      );
+    } else if (err.errors) {
+      errorMessages.push("Validation failed. Please check the inputs.");
+    } else if (err.name === "MongoError") {
+      errorMessages.push("Database error. Please try again later.");
+    } else {
+      errorMessages.push(
+        "An unexpected error occurred. Please try again later."
+      );
+    }
+
+    res.status(500).json({ message: errorMessages });
   }
 };
 

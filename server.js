@@ -23,6 +23,7 @@ const {
   deleteCategory,
 } = require("./controllers/category");
 const verifyRole = require("./middleware/auth");
+const checkout = require("./controllers/stripe");
 require("dotenv").config();
 
 // Middleware
@@ -66,6 +67,7 @@ app.get("/api/:username/ads", getUserAds);
 app.get("/api/ads", getAds);
 app.get("/api/ad/:slug", getAd);
 app.get("/api/ads/:category", getRelatedAds);
+app.post("/create-checkout-session", checkout);
 
 /* Server */
 const DB_URI = process.env.DB_URI;
