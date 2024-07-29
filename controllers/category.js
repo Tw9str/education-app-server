@@ -65,16 +65,18 @@ const addCategory = async (req, res) => {
   }
 };
 
-const updateSold = async (req, res) => {
+const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const Category = await Category.findById(id);
-    if (!Category) {
+    const category = await Category.findById(id);
+    if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
-    Category.sold = !Category.sold;
-    await Category.save();
-    res.status(201).json({ success: true, message: "Sold status updated" });
+    category.isVisible = !category.isVisible;
+    await category.save();
+    res
+      .status(201)
+      .json({ success: true, message: "Visibility status updated" });
   } catch (error) {
     res.status(500).json({ message: "Error saving update" });
   }
@@ -98,51 +100,43 @@ const deleteCategory = async (req, res) => {
     // Find and delete all exams related to the category
     const exams = await Exam.find({ category: id });
     for (const exam of exams) {
+      // Find all questions related to the exam
+      const questions = await Question.find({ _id: { $in: exam.questions } });
+
+      for (const question of questions) {
+        // If question has an image, delete it from the filesystem
+        if (question.image) {
+          const imagePath = join(
+            __dirname,
+            "../public/questions",
+            question.image
+          );
+          deleteFile(imagePath, (err) => {
+            if (err) console.error(`Failed to delete image ${imagePath}:`, err);
+          });
+        }
+      }
+
+      // Delete the questions related to the exam
+      await Question.deleteMany({ _id: { $in: exam.questions } });
+
       // Delete the exam
       await exam.deleteOne();
-      // Find and delete all related questions
-      await Question.deleteMany({ _id: { $in: exam.questions } });
     }
 
     res.json({
       message:
-        "Category, corresponding exams, and related questions deleted successfully",
+        "Category, corresponding exams, and related questions and images deleted successfully",
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// const deleteFile = promisify(fs.unlink);
-
-// const deleteCategory = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const Category = await Category.findById(id);
-//     if (!Category) {
-//       return res.status(404).json({ message: "Category not found" });
-//     }
-//     for (const image of Category.imagesPath) {
-//       const imagePath = join(
-//         __dirname,
-//         "../../client/public/assets/imgs",
-//         image
-//       );
-//       if (fs.existsSync(imagePath)) {
-//         await deleteFile(imagePath);
-//       }
-//     }
-//     await Category.deleteOne();
-//     res.json({ message: "Category deleted successfully" });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
 module.exports = {
   getCategories,
   getCategory,
   addCategory,
-  updateSold,
+  updateCategory,
   deleteCategory,
 };

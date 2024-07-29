@@ -29,19 +29,6 @@ const getExams = async (req, res) => {
   }
 };
 
-const getCategory = async (req, res) => {
-  const { slug } = req.params;
-  try {
-    const category = await Category.findOne({ slug });
-    if (!category) {
-      return res.status(404).send({ message: "Category not found" });
-    }
-    res.json(category);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
 const addExam = async (req, res) => {
   const { title, user, category } = req.body;
 
@@ -110,30 +97,49 @@ const getExam = async (req, res) => {
 
 const deleteFile = promisify(fs.unlink);
 
-const deleteCategory = async (req, res) => {
+const deleteExam = async (req, res) => {
   try {
     const { id } = req.params;
-    const Category = await Category.findById(id);
-    if (!Category) {
-      return res.status(404).json({ message: "Category not found" });
+    const exam = await Exam.findById(id).populate("questions");
+
+    if (!exam) {
+      return res.status(404).json({ message: "Exam not found" });
     }
-    for (const image of Category.imagesPath) {
-      const imagePath = join(__dirname, "../../client/public/images", image);
-      if (fs.existsSync(imagePath)) {
-        await deleteFile(imagePath);
+
+    // Find and delete images associated with questions
+    for (const question of exam.questions) {
+      if (question.image) {
+        const imagePath = join(
+          __dirname,
+          "../public/questions",
+          question.image
+        );
+        try {
+          await deleteFile(imagePath);
+        } catch (err) {
+          console.error(`Failed to delete image ${imagePath}:`, err);
+        }
       }
     }
-    await Category.deleteOne();
-    res.json({ message: "Category deleted successfully" });
+
+    // Delete the questions related to the exam
+    await Question.deleteMany({
+      _id: { $in: exam.questions.map((q) => q._id) },
+    });
+
+    // Delete the exam
+    await exam.deleteOne();
+
+    res.json({ message: "Exam deleted successfully" });
   } catch (err) {
+    console.error(err); // Added logging to aid in debugging
     res.status(500).json({ message: err.message });
   }
 };
 
 module.exports = {
   getExams,
-  getCategory,
   addExam,
   getExam,
-  deleteCategory,
+  deleteExam,
 };

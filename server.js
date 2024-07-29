@@ -3,8 +3,18 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const cors = require("cors");
 const helmet = require("helmet");
-const { addExam, getExam, getExams } = require("./controllers/exam");
-const { login, register, createSeedUser } = require("./controllers/user");
+const {
+  addExam,
+  getExam,
+  getExams,
+  deleteExam,
+} = require("./controllers/exam");
+const {
+  login,
+  register,
+  createSeedUser,
+  getUsers,
+} = require("./controllers/user");
 const {
   addListing,
   getAds,
@@ -54,6 +64,7 @@ app.post(
 );
 app.get("/api/exams/exam/:slug", getExam);
 app.get("/api/exams", getExams);
+app.get("/api/users", getUsers);
 app.post("/api/auth/login", login);
 app.post("/api/auth/register", register);
 app.get("/api/auth/createSeedUser", createSeedUser);
@@ -62,6 +73,7 @@ app.get("/api/categories", getCategories);
 app.post("/api/category/add", addCategory);
 app.get("/api/categories/:title", getExamCategory);
 app.delete("/api/categories/delete/:id", verifyRole(["admin"]), deleteCategory);
+app.delete("/api/exams/delete/:id", verifyRole(["admin"]), deleteExam);
 // app.delete("/api/listing/delete/:id", verifyToken, verifyAdOwner, deleteAd);
 app.get("/api/:username/ads", getUserAds);
 app.get("/api/ads", getAds);
