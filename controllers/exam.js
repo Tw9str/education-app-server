@@ -6,26 +6,19 @@ const fs = require("fs");
 
 const getExams = async (req, res) => {
   try {
-    const exams = await Exam.find();
-    const examsWithQuestions = await Promise.all(
-      exams.map(async (exam) => {
-        const populatedExam = await Exam.populate(exam, {
-          path: "questions",
-          model: "Question",
-        });
+    const exams = await Exam.find()
+      .populate("user")
+      .populate("category")
+      .lean();
 
-        const questionsCount = populatedExam.questions.length;
+    if (!exams || exams.length === 0) {
+      return res.status(404).json({ message: "No exams found" });
+    }
 
-        return {
-          ...populatedExam._doc,
-          questionsCount: questionsCount,
-        };
-      })
-    );
-    res.json(examsWithQuestions);
+    return res.status(200).json(exams);
   } catch (error) {
     console.error("Error fetching Exams:", error);
-    res.status(500).json({ error: "Failed to fetch Exams" });
+    res.status(500).json({ error: "Failed to fetch exams" });
   }
 };
 

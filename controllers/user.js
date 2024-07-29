@@ -150,12 +150,23 @@ const getUsers = async (req, res) => {
 
 const updateUserRole = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role: req.body.role },
-      { new: true }
-    );
+    // Find the user by ID first to check the username
+    const user = await User.findById(req.params.id);
+
+    // Check if the user exists
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Check if the user's username is 'admin'
+    if (user.username === "admin") {
+      return res
+        .status(403)
+        .json({ message: "Cannot change the role of the admin user" });
+    }
+
+    // Proceed with updating the user's role
+    user.role = req.body.role;
+    await user.save();
+
     res.status(200).json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -14,6 +14,7 @@ const {
   register,
   createSeedUser,
   getUsers,
+  updateUserRole,
 } = require("./controllers/user");
 const {
   addListing,
@@ -74,6 +75,7 @@ app.post("/api/category/add", addCategory);
 app.get("/api/categories/:title", getExamCategory);
 app.delete("/api/categories/delete/:id", verifyRole(["admin"]), deleteCategory);
 app.delete("/api/exams/delete/:id", verifyRole(["admin"]), deleteExam);
+app.patch("/api/users/promote/:id", verifyRole(["admin"]), updateUserRole);
 // app.delete("/api/listing/delete/:id", verifyToken, verifyAdOwner, deleteAd);
 app.get("/api/:username/ads", getUserAds);
 app.get("/api/ads", getAds);
