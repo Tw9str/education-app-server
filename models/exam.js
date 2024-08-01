@@ -21,6 +21,15 @@ const examSchema = new Schema(
       ref: "User",
       required: true,
     },
+    plan: {
+      type: String,
+      enum: ["free", "basic", "premium"],
+      default: "free",
+    },
+    isVisible: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

@@ -7,6 +7,11 @@ const categorySchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    plan: {
+      type: String,
+      enum: ["free", "basic", "premium"],
+      default: "free",
+    },
     isVisible: {
       type: Boolean,
       default: false,

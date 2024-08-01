@@ -66,19 +66,25 @@ const addCategory = async (req, res) => {
 };
 
 const updateCategory = async (req, res) => {
+  const { id } = req.params;
+  const { plan, isVisible } = req.body;
+
   try {
-    const { id } = req.params;
-    const category = await Category.findById(id);
-    if (!category) {
+    // Find the category by ID and update it
+    const updatedCategory = await Category.findByIdAndUpdate(
+      id,
+      { plan, isVisible },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedCategory) {
       return res.status(404).json({ message: "Category not found" });
     }
-    category.isVisible = !category.isVisible;
-    await category.save();
-    res
-      .status(201)
-      .json({ success: true, message: "Visibility status updated" });
+
+    res.status(200).json(updatedCategory);
   } catch (error) {
-    res.status(500).json({ message: "Error saving update" });
+    console.error(error);
+    res.status(500).json({ message: "Error updating category" });
   }
 };
 

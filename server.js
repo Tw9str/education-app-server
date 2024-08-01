@@ -8,6 +8,8 @@ const {
   getExam,
   getExams,
   deleteExam,
+  updateExam,
+  getExamCategory,
 } = require("./controllers/exam");
 const {
   login,
@@ -15,23 +17,14 @@ const {
   createSeedUser,
   getUsers,
   updateUserRole,
+  updateUserPlan,
 } = require("./controllers/user");
-const {
-  addListing,
-  getAds,
-  getUserAds,
-  deleteAd,
-  getAd,
-  getCategoryAds,
-  getRelatedAds,
-  getExamCategory,
-} = require("./controllers/ad");
-const verifyToken = require("./middleware/auth");
-const verifyAdOwner = require("./middleware/verifyAdOwner");
+
 const {
   getCategories,
   addCategory,
   deleteCategory,
+  updateCategory,
 } = require("./controllers/category");
 const verifyRole = require("./middleware/auth");
 const checkout = require("./controllers/stripe");
@@ -58,29 +51,28 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.post(
-  "/api/create-exam",
+  "/api/exams/create-exam",
   verifyRole(["admin", "teacher"]),
   upload.any(),
   addExam
 );
 app.get("/api/exams/exam/:slug", getExam);
+app.put("/api/exams/exam/edit/:id", upload.any(), updateExam);
 app.get("/api/exams", getExams);
 app.get("/api/users", getUsers);
+app.patch("/api/users/update/:id", updateUserPlan);
 app.post("/api/auth/login", login);
 app.post("/api/auth/register", register);
 app.get("/api/auth/createSeedUser", createSeedUser);
 // app.post("/api/listing/add", verifyToken, upload.array("imgs"), addListing);
 app.get("/api/categories", getCategories);
 app.post("/api/category/add", addCategory);
+app.put("/api/categories/update/:id", updateCategory);
 app.get("/api/categories/:title", getExamCategory);
 app.delete("/api/categories/delete/:id", verifyRole(["admin"]), deleteCategory);
 app.delete("/api/exams/delete/:id", verifyRole(["admin"]), deleteExam);
 app.patch("/api/users/promote/:id", verifyRole(["admin"]), updateUserRole);
 // app.delete("/api/listing/delete/:id", verifyToken, verifyAdOwner, deleteAd);
-app.get("/api/:username/ads", getUserAds);
-app.get("/api/ads", getAds);
-app.get("/api/ad/:slug", getAd);
-app.get("/api/ads/:category", getRelatedAds);
 app.post("/create-checkout-session", checkout);
 
 /* Server */

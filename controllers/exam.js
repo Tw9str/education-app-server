@@ -1,5 +1,6 @@
 const Question = require("../models/question");
 const Exam = require("../models/exam");
+const Category = require("../models/category");
 const { promisify } = require("util");
 const { join } = require("path");
 const fs = require("fs");
@@ -88,6 +89,132 @@ const getExam = async (req, res) => {
   }
 };
 
+const getExamCategory = async (req, res) => {
+  const { title } = req.params;
+  try {
+    const category = await Category.findOne({ title });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const exams = await Exam.find({ category: category._id })
+      .populate("user")
+      .populate("category")
+      .lean();
+
+    if (!exams || exams.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No exams found for this category" });
+    }
+    exams.forEach((exams) => {
+      delete exams.user.password;
+    });
+    res.json(exams);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const updateExam = async (req, res) => {
+  const { title, category, questionsData, plan, isVisible } = req.body;
+
+  // Initialize the update data object
+  const updateData = {};
+
+  if (title) updateData.title = title;
+  if (category) updateData.category = category;
+  if (plan) updateData.plan = plan;
+  if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
+
+  if (questionsData) {
+    let questionData;
+    try {
+      questionData = JSON.parse(questionsData);
+    } catch (error) {
+      return res.status(400).json({ error: "Invalid questionsData format" });
+    }
+
+    if (!Array.isArray(questionData) || questionData.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "questionsData must be a non-empty array" });
+    }
+
+    try {
+      const questions = await Promise.all(
+        questionData.map(async (question, index) => {
+          try {
+            // Determine the image to use
+            let imageFileName;
+            if (req.files && req.files[index]) {
+              imageFileName = req.files[index].filename; // New image uploaded
+            } else if (question.image) {
+              imageFileName = question.image; // Retain the existing image
+            } else {
+              imageFileName = ""; // No image provided, handle as needed
+            }
+
+            if (question._id) {
+              // Update existing question
+              return await Question.findByIdAndUpdate(
+                question._id,
+                {
+                  image: imageFileName,
+                  answers: question.answers,
+                  correctAnswers: question.correctAnswers,
+                  points: parseFloat(question.points),
+                  explanation: question.explanation,
+                },
+                { new: true, runValidators: true }
+              );
+            } else {
+              // Create new question
+              const newQuestion = new Question({
+                image: imageFileName,
+                answers: question.answers,
+                correctAnswers: question.correctAnswers,
+                points: parseFloat(question.points),
+                explanation: question.explanation,
+              });
+              return await newQuestion.save();
+            }
+          } catch (error) {
+            console.error(
+              `Error processing question at index ${index}: ${error.message}`
+            );
+            throw new Error(`Error processing question at index ${index}`);
+          }
+        })
+      );
+
+      updateData.questions = questions.map((q) => q._id);
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ message: "Server Error", error: error.message });
+    }
+  }
+
+  try {
+    const updatedExam = await Exam.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedExam) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
+
+    res.json({ message: "Exam updated successfully", exam: updatedExam });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 const deleteFile = promisify(fs.unlink);
 
 const deleteExam = async (req, res) => {
@@ -134,5 +261,7 @@ module.exports = {
   getExams,
   addExam,
   getExam,
+  getExamCategory,
   deleteExam,
+  updateExam,
 };

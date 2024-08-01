@@ -173,6 +173,32 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const updateUserPlan = async (req, res) => {
+  const { id } = req.params;
+  const { plan } = req.body;
+
+  if (!plan || !["free", "basic", "premium"].includes(plan)) {
+    return res.status(400).json({ message: "Invalid plan specified" });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { plan },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 /* Seed User */
 const createSeedUser = async (req, res) => {
   try {
@@ -207,4 +233,11 @@ const createSeedUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, createSeedUser, getUsers, updateUserRole };
+module.exports = {
+  register,
+  login,
+  createSeedUser,
+  getUsers,
+  updateUserRole,
+  updateUserPlan,
+};
