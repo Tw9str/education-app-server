@@ -67,13 +67,13 @@ const addCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   const { id } = req.params;
-  const { plan, isVisible } = req.body;
+  const { plan, isVisible, title } = req.body;
 
   try {
     // Find the category by ID and update it
     const updatedCategory = await Category.findByIdAndUpdate(
       id,
-      { plan, isVisible },
+      { plan, isVisible, title },
       { new: true } // Return the updated document
     );
 

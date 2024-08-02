@@ -64,7 +64,6 @@ app.patch("/api/users/update/:id", updateUserPlan);
 app.post("/api/auth/login", login);
 app.post("/api/auth/register", register);
 app.get("/api/auth/createSeedUser", createSeedUser);
-// app.post("/api/listing/add", verifyToken, upload.array("imgs"), addListing);
 app.get("/api/categories", getCategories);
 app.post("/api/category/add", addCategory);
 app.put("/api/categories/update/:id", updateCategory);
@@ -72,7 +71,6 @@ app.get("/api/categories/:title", getExamCategory);
 app.delete("/api/categories/delete/:id", verifyRole(["admin"]), deleteCategory);
 app.delete("/api/exams/delete/:id", verifyRole(["admin"]), deleteExam);
 app.patch("/api/users/promote/:id", verifyRole(["admin"]), updateUserRole);
-// app.delete("/api/listing/delete/:id", verifyToken, verifyAdOwner, deleteAd);
 app.post("/create-checkout-session", checkout);
 
 /* Server */
