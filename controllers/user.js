@@ -111,7 +111,7 @@ const login = async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({
       $or: [{ username }, { email: username }],
-    }).lean();
+    });
     if (!user) {
       return res
         .status(401)
@@ -130,7 +130,6 @@ const login = async (req, res) => {
         expiresIn: "3d",
       }
     );
-    delete user.password;
     res
       .status(200)
       .json({ token, user, success: true, message: "Login successful" });

@@ -28,6 +28,12 @@ const {
 } = require("./controllers/category");
 const verifyRole = require("./middleware/auth");
 const checkout = require("./controllers/stripe");
+const {
+  storeSession,
+  getSession,
+  clearSession,
+  submitExam,
+} = require("./controllers/session");
 require("dotenv").config();
 
 // Middleware
@@ -59,6 +65,9 @@ app.post(
 app.get("/api/exams/exam/:slug", getExam);
 app.put("/api/exams/exam/edit/:id", upload.any(), updateExam);
 app.get("/api/exams", getExams);
+app.post("/api/exams/store-session", storeSession);
+app.get("/api/exams/session", getSession);
+app.post("/api/exams/submit-exam", submitExam);
 app.get("/api/users", getUsers);
 app.patch("/api/users/update/:id", updateUserPlan);
 app.post("/api/auth/login", login);

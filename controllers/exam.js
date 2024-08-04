@@ -24,7 +24,7 @@ const getExams = async (req, res) => {
 };
 
 const addExam = async (req, res) => {
-  const { title, user, category } = req.body;
+  const { title, user, category, duration } = req.body;
 
   let questionData;
   try {
@@ -33,10 +33,10 @@ const addExam = async (req, res) => {
     return res.status(400).json({ error: "Invalid questionsData format" });
   }
 
-  if (!title || !Array.isArray(questionData)) {
+  if (!title || !Array.isArray(questionData) || !duration) {
     return res
       .status(400)
-      .json({ error: "Title and questionsData are required" });
+      .json({ error: "Title, questionsData, and duration are required" });
   }
 
   try {
@@ -65,6 +65,7 @@ const addExam = async (req, res) => {
       questions: questions.map((q) => q._id),
       category,
       user,
+      duration,
     });
     await newExam.save();
     res
